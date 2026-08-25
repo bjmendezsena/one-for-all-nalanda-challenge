@@ -1,3 +1,19 @@
-// TODO: define ValidationApiError carrying the HTTP status and the RFC 7807 Problem Details body
-// (docs/sdk/code_rules.md § 3).
-export {};
+export interface ProblemDetailsBody {
+	type?: string;
+	title?: string;
+	status?: number;
+	detail?: string;
+	errors?: Array<{ field: string; message: string }>;
+}
+
+export class ValidationApiError extends Error {
+	readonly status: number;
+	readonly body?: ProblemDetailsBody;
+
+	constructor(status: number, body?: ProblemDetailsBody) {
+		super(body?.detail ?? `Request failed with status ${status}`);
+		this.name = "ValidationApiError";
+		this.status = status;
+		this.body = body;
+	}
+}

@@ -29,5 +29,5 @@ gates. Individual steps are also available as skills (`speckit-specify`, `specki
 …). Feature artifacts live in `specs/<###-feature-name>/`.
 
 <!-- SPECKIT START -->
-Active feature plan: `specs/002-service-core-flows/plan.md`
+Active feature plan: `specs/003-sdk-client/plan.md`
 <!-- SPECKIT END -->

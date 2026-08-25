@@ -10,16 +10,25 @@ Status: living document. This file lives under `docs/sdk/` — it is specific to
 // src/client.ts
 export function createClient(options: ClientOptions): ValidationClient {
   const baseUrl = options.baseUrl.replace(/\/$/, "");
-  const headers = { "Content-Type": "application/json", ...options.headers };
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "X-Api-Key": options.apiKey,
+    ...options.headers,
+  };
 
   return {
-    startValidation: (input) => startValidation(baseUrl, headers, input),
-    upload: (requestId, data) => upload(baseUrl, requestId, data),
+    startValidation: (input, callOptions) => startValidation(baseUrl, headers, input, callOptions),
+    upload: (target, data, contentType) => upload(baseUrl, headers, target, data, contentType),
     getValidation: (requestId) => getValidation(baseUrl, headers, requestId),
     waitForCompletion: (requestId, opts) => waitForCompletion(baseUrl, headers, requestId, opts),
   };
 }
 ```
+
+`upload` takes the object `startValidation` returned — the client keeps no state, and the read
+endpoint does not return `uploadUrl`, so the presigned destination has to be handed back in. It
+performs the presigned `PUT` and then the `confirm` call, which is why the public surface has no
+separate confirm operation.
 
 ## 2. HTTP layer: native `fetch`, one internal `request()` helper
 
@@ -81,7 +90,7 @@ export interface ValidationResult {
 export interface ValidationRequestDto {
   requestId: string;
   status: ValidationStatus;
-  result?: ValidationResult;
+  result?: ValidationResult | null;
 }
 
 export interface StartValidationInput {
@@ -94,7 +103,28 @@ export interface StartValidationResponse {
   status: ValidationStatus;
   uploadUrl: string;
 }
+
+export interface ConfirmUploadResponse {
+  requestId: string;
+  status: ValidationStatus;
+}
+
+export interface ClientOptions {
+  baseUrl: string;
+  apiKey: string;
+  headers?: Record<string, string>;
+}
+
+export interface StartValidationCallOptions {
+  idempotencyKey?: string;
+}
 ```
+
+`result` is optional *and* nullable because the backend serializes `"result": null` before the
+validation completes. `apiKey` is required: the backend rejects every call without a valid
+`X-Api-Key`, so a client built without one can never work. `Idempotency-Key` is a header, not a
+body field, so it lives in `StartValidationCallOptions` rather than in `StartValidationInput`,
+keeping the input type a mirror of the wire.
 
 ## 5. Polling: exponential backoff + `AbortSignal`, no retry library
 
@@ -157,7 +187,7 @@ describe("createClient", () => {
       json: async () => ({ requestId: "abc-123", status: "COMPLETED" }),
     });
 
-    const client = createClient({ baseUrl: "https://api.local" });
+    const client = createClient({ baseUrl: "https://api.local", apiKey: "local-dev-api-key" });
     const result = await client.getValidation("abc-123");
 
     expect(result.status).toBe("COMPLETED");
@@ -170,7 +200,7 @@ describe("createClient", () => {
       json: async () => ({ title: "Not Found", status: 404, detail: "Validation request not found" }),
     });
 
-    const client = createClient({ baseUrl: "https://api.local" });
+    const client = createClient({ baseUrl: "https://api.local", apiKey: "local-dev-api-key" });
     await expect(client.getValidation("missing")).rejects.toThrow("Validation request not found");
   });
 });
