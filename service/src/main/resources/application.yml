@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: validation-service
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:validation}
+    username: ${POSTGRES_USER:validation}
+    password: ${POSTGRES_PASSWORD:validation}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: validation-service
+      auto-offset-reset: earliest
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: com.nalanda.validation.adapter.out.messaging
+    producer:
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+storage:
+  endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+  bucket: ${MINIO_BUCKET:validation-documents}
+  access-key: ${MINIO_ROOT_USER:minioadmin}
+  secret-key: ${MINIO_ROOT_PASSWORD:minioadmin}
+  region: ${MINIO_REGION:us-east-1}

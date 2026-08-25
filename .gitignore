@@ -1,0 +1,39 @@
+# ---- Java / Gradle (service/) ----
+service/.gradle/
+service/build/
+!service/gradle/wrapper/gradle-wrapper.jar
+*.class
+hs_err_pid*
+
+# ---- Node / TypeScript (sdk/, root) ----
+node_modules/
+sdk/dist/
+sdk/coverage/
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
+.npm/
+
+# ---- Environment / secrets ----
+.env
+.env.local
+.env.*.local
+# docker/.env holds development-only defaults for the local environment and is committed
+# on purpose (see docs/service/architecture.md § 3.1).
+!docker/.env
+
+# ---- Logs ----
+*.log
+
+# ---- IDE / editor ----
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+
+# ---- OS ----
+.DS_Store
+Thumbs.db
+Desktop.ini
