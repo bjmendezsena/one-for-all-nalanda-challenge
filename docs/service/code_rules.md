@@ -16,7 +16,7 @@ Two kinds of objects live in `domain/model`:
 public class ValidationRequest {
 
     private final UUID id;
-    private final DocumentMetadata document;
+    private DocumentMetadata document; // not final: processing records the discovered size (see below)
     private ValidationStatus status;
     private ValidationResult result;
 
@@ -54,6 +54,12 @@ public class ValidationRequest {
         this.status = ValidationStatus.FAILED;
     }
 
+    public void recordDiscoveredSize(long sizeInBytes) {
+        // The size is only knowable during processing — docs/service/upload-flow.md § 2.4.
+        // A transition method of the aggregate, not a public setter: the no-anemic-model rule holds.
+        this.document = document.withSizeInBytes(sizeInBytes);
+    }
+
     private void requireStatus(ValidationStatus expected) {
         if (status != expected) {
             throw new InvalidStatusTransitionException(id, status, expected);
@@ -69,7 +75,11 @@ public class ValidationRequest {
 
 ```java
 // domain/model/DocumentMetadata.java
-public record DocumentMetadata(String filename, String contentType, long sizeInBytes, String storageKey) {}
+public record DocumentMetadata(String filename, String contentType, long sizeInBytes, String storageKey) {
+    public DocumentMetadata withSizeInBytes(long discoveredSizeInBytes) {
+        return new DocumentMetadata(filename, contentType, discoveredSizeInBytes, storageKey);
+    }
+}
 
 // domain/model/ValidationResult.java
 public record ValidationResult(Verdict verdict, Map<String, Object> fields, String reason) {
@@ -87,6 +97,7 @@ A "not found" lookup never returns `Optional` — it's never a valid outcome for
 // domain/port/ValidationRequestRepository.java
 public interface ValidationRequestRepository {
     ValidationRequest save(ValidationRequest request);
+    ValidationRequest save(ValidationRequest request, String idempotencyKey); // the key belongs to the record, not to the entity
     ValidationRequest findById(UUID id); // throws ValidationRequestNotFoundException if missing
     Optional<ValidationRequest> findByIdempotencyKey(String idempotencyKey); // a real optional business case
 }
@@ -301,9 +312,8 @@ class ValidationController {
     }
 
     @PostMapping("/{requestId}/confirm")
-    ResponseEntity<Void> confirm(@PathVariable UUID requestId) {
-        confirmUploadUseCase.execute(requestId);
-        return ResponseEntity.accepted().build();
+    ResponseEntity<ConfirmUploadResult> confirm(@PathVariable UUID requestId) {
+        return ResponseEntity.accepted().body(confirmUploadUseCase.execute(requestId));
     }
 
     @GetMapping("/{requestId}")
@@ -313,7 +323,7 @@ class ValidationController {
 }
 ```
 
-`CreateValidationCommand` and `CreateValidationResult` are small `record`s that happen to live in `application` (they're the use case's input/output), reused directly as the request/response shape — not a separate DTO layer.
+`CreateValidationCommand`, `CreateValidationResult` and `ConfirmUploadResult` are small `record`s that happen to live in `application` (they're the use case's input/output), reused directly as the request/response shape — not a separate DTO layer.
 
 ## 7. Testing conventions
 

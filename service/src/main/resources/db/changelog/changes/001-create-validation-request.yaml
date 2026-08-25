@@ -1,0 +1,66 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-create-validation-request
+      author: nalanda
+      changes:
+        - createTable:
+            tableName: validation_request
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_validation_request
+                    nullable: false
+              - column:
+                  name: status
+                  type: varchar(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: filename
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: content_type
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: size_in_bytes
+                  type: bigint
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: storage_key
+                  type: varchar(512)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: result_verdict
+                  type: varchar(16)
+              - column:
+                  name: result_fields
+                  type: varchar(4000)
+              - column:
+                  name: result_reason
+                  type: varchar(512)
+              - column:
+                  name: idempotency_key
+                  type: varchar(255)
+        - createIndex:
+            indexName: ux_validation_request_idempotency_key
+            tableName: validation_request
+            unique: true
+            columns:
+              - column:
+                  name: idempotency_key
+      rollback:
+        - dropIndex:
+            indexName: ux_validation_request_idempotency_key
+            tableName: validation_request
+        - dropTable:
+            tableName: validation_request
