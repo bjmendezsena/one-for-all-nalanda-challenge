@@ -1,0 +1,17 @@
+{
+  "integration": "speckit",
+  "version": "0.8.10.dev0",
+  "installed_at": "2026-07-07T19:26:51.210039+00:00",
+  "files": {
+    ".specify/scripts/bash/common.sh": "dd638316259e699fd466542c77ef16af5eb198efe0447c081f86b890db414ba8",
+    ".specify/scripts/bash/setup-plan.sh": "0d1d7a66de157b0be1385bb91aa71e5bf95550217abf47a73270dab0dc52895a",
+    ".specify/scripts/bash/setup-tasks.sh": "e8d050c63c5afb664a8b671b0b0155513fb9cab0567b335e16b9eb035482aad2",
+    ".specify/scripts/bash/check-prerequisites.sh": "aff361639c504b95a2901493f5022788adc01a6792fd37f132de8f57782e4b80",
+    ".specify/scripts/bash/create-new-feature.sh": "bcf4964ca0c6c78717bb42d9e66b8c7e5ee82779cd96afc5aa7b08b75abe5790",
+    ".specify/templates/constitution-template.md": "348425213ecc329c0f447a3c017253dcc870d08c09303f03beb538b2ca8fdc55",
+    ".specify/templates/checklist-template.md": "709d8ab8384a3a49f5e0f64479f71553ef6d6f8bb4f00281b05f47837993b536",
+    ".specify/templates/tasks-template.md": "e1faafbd57d2a38f05a45c9d76ad937a4655db297b38fbf30f30e746dd85af67",
+    ".specify/templates/spec-template.md": "6d63253f92a62b6f7e80bd437006f83820f07eb9dc6fd54916007e0be76b8b25",
+    ".specify/templates/plan-template.md": "7a23cdb1c5a8c243f7e35b5a421f6a81b119d5da41f1c5eef89daba8194d54e1"
+  }
+}

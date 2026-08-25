@@ -1,0 +1,28 @@
+{
+  "name": "one-for-all-nalanda-challenge",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Root orchestration scripts for the service/ (Gradle) and sdk/ (npm) artifacts. Not a publishable package.",
+  "type": "module",
+  "scripts": {
+    "docker:up": "docker compose -f docker/docker-compose.yml up -d",
+    "docker:down": "docker compose -f docker/docker-compose.yml down",
+    "install:sdk": "npm --prefix sdk install",
+    "build:sdk": "npm --prefix sdk run build",
+    "test:sdk": "npm --prefix sdk run test",
+    "dev:sdk": "npm --prefix sdk run dev",
+    "dev:service": "cd service && ./gradlew bootRun",
+    "build:service": "cd service && ./gradlew build",
+    "test:service": "cd service && ./gradlew test",
+    "dev": "concurrently --names infra,service,sdk --prefix-colors blue,green,magenta --kill-others-on-fail \"npm run docker:up\" \"npm run dev:service\" \"npm run dev:sdk\"",
+    "build": "npm run build:service && npm run build:sdk",
+    "test": "npm run test:service && npm run test:sdk"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "UNLICENSED"
+}
