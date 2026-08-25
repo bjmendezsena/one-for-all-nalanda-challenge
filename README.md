@@ -8,6 +8,7 @@ Fullstack Engineer Sr — Technical Assessment. Spring Boot service (`service/`)
   - [Repository layout](#repository-layout)
 - [Prerequisites](#prerequisites)
 - [Quick start](#quick-start)
+- [Endpoints and local services](#endpoints-and-local-services)
 - [Design trade-offs](#design-trade-offs)
 - [What I'd do with another day](#what-id-do-with-another-day)
 - [AI usage](#ai-usage)
@@ -97,6 +98,36 @@ Full guides, extracted here to keep this README short:
 | [`example/README.md`](example/README.md) | Running the external-consumer integration example (14 scenarios against a live backend) |
 
 The root `package.json` holds only orchestration scripts (`dev`, `build`, `test`, `docker:up`/`docker:down`) that delegate to `service/` (Gradle) and `sdk/` (npm) — it is not itself a publishable package. See [`docs/design-trade-offs.md` § Root package.json and dev orchestration](docs/design-trade-offs.md#root-packagejson-and-dev-orchestration).
+
+## Endpoints and local services
+
+Once the infrastructure is up (`npm run docker:up`) and the service is running (`npm run dev:service`), this is what's reachable for testing — the fastest way to poke at the system before reading anything else.
+
+### Service API
+
+Base URL `http://localhost:8080/api/v1`. Every endpoint requires the header `X-Api-Key: local-dev-api-key` (default value from `security.api-key` in `application.yml`; override with the `API_KEY` environment variable).
+
+| Method | Endpoint | Does |
+|---|---|---|
+| `POST` | `/api/v1/validations` | Registers the intent to validate a document and returns `{ requestId, status, uploadUrl }` |
+| `POST` | `/api/v1/validations/{requestId}/confirm` | Confirms the upload and enqueues async processing |
+| `GET` | `/api/v1/validations/{requestId}` | Reads the current status, and the result once it exists |
+
+Full reference — error catalog, `Idempotency-Key` semantics, a complete curl walkthrough of the three-step flow: [`docs/service/api.md`](docs/service/api.md).
+
+### MinIO (object storage)
+
+| | |
+|---|---|
+| API endpoint | `http://localhost:9000` |
+| Console (web UI) | `http://localhost:9001` |
+| Credentials | `minioadmin` / `minioadmin` |
+| Bucket | `validation-documents` (created automatically on the first `docker compose up`) |
+
+Credentials and ports come from `docker/.env` and can be overridden there; the service reads the same
+values. The service never proxies the document bytes — the client uploads directly to MinIO using the
+presigned URL returned by `POST /api/v1/validations`. For the console/CLI/presigned-URL walkthroughs, see
+[`docs/service/running-locally.md`](docs/service/running-locally.md) § Testing MinIO.
 
 ## Design trade-offs
 
