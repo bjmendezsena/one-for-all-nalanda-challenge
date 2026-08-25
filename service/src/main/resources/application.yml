@@ -28,3 +28,7 @@ storage:
   access-key: ${MINIO_ROOT_USER:minioadmin}
   secret-key: ${MINIO_ROOT_PASSWORD:minioadmin}
   region: ${MINIO_REGION:us-east-1}
+  presign-ttl: ${MINIO_PRESIGN_TTL:PT15M}
+
+security:
+  api-key: ${API_KEY:local-dev-api-key}

@@ -65,7 +65,7 @@ Rationale for the specific thresholds (PDF-only, 15 MB ceiling) is recorded in `
 |---|---|
 | Scope | An `Idempotency-Key` is scoped to the create-validation endpoint. |
 | Expiration | None. A key remains valid for as long as its associated `ValidationRequest` exists — there is no TTL. |
-| Same key, same request | Returns the original `requestId` and response; no new resource is created. |
+| Same key, same request | Returns the original `requestId` and its current status; no new resource is created. The upload instructions are re-signed over the already stored storage key, so the returned `uploadUrl` is a fresh signature of the same object — a presigned URL expires and is never persisted, so the literal original URL cannot be reproduced. |
 | Same key, different body | Returns the original resource's response, ignoring the new body's contents. No comparison against the original body is performed. |
 | Confirm/upload replay | `confirm` is safe to call more than once: if the `ValidationRequest` is no longer in `PENDING_UPLOAD`, it returns success with the current status instead of re-triggering processing. |
 
