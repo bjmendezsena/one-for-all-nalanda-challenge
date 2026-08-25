@@ -42,9 +42,15 @@ export async function request<T>(url: string, init: RequestInit): Promise<T> {
     const problem = await response.json().catch(() => undefined);
     throw new ValidationApiError(response.status, problem);
   }
-  return response.status === 204 ? (undefined as T) : response.json();
+  const body = await response.text();
+  return (body ? JSON.parse(body) : undefined) as T;
 }
 ```
+
+A successful response is parsed only when it actually carries a body. Presigned object-storage
+`PUT`s answer `200` with an empty body, so keying the check on status `204` alone makes `upload`
+throw a `SyntaxError` before it ever reaches `confirm`. Tests that stand in for storage must return
+a body-less response, never a JSON one.
 
 ## 3. Errors: `ValidationApiError` mirroring the backend's Problem Details shape
 

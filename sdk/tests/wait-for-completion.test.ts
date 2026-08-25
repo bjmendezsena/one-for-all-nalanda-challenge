@@ -9,12 +9,19 @@ const COMPLETED = {
 };
 const FAILED = { requestId: "abc-123", status: "FAILED", result: null };
 
+function jsonResponse(body: unknown): Response {
+	return new Response(JSON.stringify(body), {
+		status: 200,
+		headers: { "Content-Type": "application/json" },
+	});
+}
+
 function stubReads(...bodies: Array<unknown>): ReturnType<typeof vi.fn> {
 	const mock = vi.fn();
 	for (const body of bodies) {
-		mock.mockResolvedValueOnce({ ok: true, status: 200, json: async () => body });
+		mock.mockImplementationOnce(async () => jsonResponse(body));
 	}
-	mock.mockResolvedValue({ ok: true, status: 200, json: async () => PROCESSING });
+	mock.mockImplementation(async () => jsonResponse(PROCESSING));
 	vi.stubGlobal("fetch", mock);
 	return mock;
 }

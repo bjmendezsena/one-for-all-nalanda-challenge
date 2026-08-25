@@ -5,15 +5,22 @@ import { ValidationApiError } from "../src/errors";
 const BASE_URL = "https://api.local";
 const API_KEY = "local-dev-api-key";
 
-function jsonResponse(status: number, body: unknown): Partial<Response> {
-	return { ok: status >= 200 && status < 300, status, json: async () => body };
+function jsonResponse(status: number, body: unknown): Response {
+	return new Response(JSON.stringify(body), {
+		status,
+		headers: { "Content-Type": "application/json" },
+	});
+}
+
+function storageResponse(): Response {
+	return new Response(null, { status: 200 });
 }
 
 function fetchMock(): ReturnType<typeof vi.fn> {
 	return globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
 }
 
-function stubFetch(...responses: Array<Partial<Response>>): void {
+function stubFetch(...responses: Array<Partial<Response> | Response>): void {
 	const mock = vi.fn();
 	for (const response of responses) {
 		mock.mockResolvedValueOnce(response);
@@ -103,7 +110,7 @@ describe("upload", () => {
 	});
 
 	it("should_putBytesThenConfirm_when_uploadSucceeds", async () => {
-		stubFetch(jsonResponse(200, {}), jsonResponse(202, { requestId: "abc-123", status: "QUEUED" }));
+		stubFetch(storageResponse(), jsonResponse(202, { requestId: "abc-123", status: "QUEUED" }));
 
 		const confirmed = await newClient().upload(target, "bytes", "application/pdf");
 
@@ -119,7 +126,7 @@ describe("upload", () => {
 	});
 
 	it("should_sendOnlyContentTypeToStorage_when_uploadingBytes", async () => {
-		stubFetch(jsonResponse(200, {}), jsonResponse(202, { requestId: "abc-123", status: "QUEUED" }));
+		stubFetch(storageResponse(), jsonResponse(202, { requestId: "abc-123", status: "QUEUED" }));
 
 		await newClient({ headers: { "X-Correlation-Id": "corr-1" } }).upload(target, "bytes", "application/pdf");
 
@@ -127,7 +134,7 @@ describe("upload", () => {
 	});
 
 	it("should_sendNoHeadersToStorage_when_contentTypeIsOmitted", async () => {
-		stubFetch(jsonResponse(200, {}), jsonResponse(202, { requestId: "abc-123", status: "QUEUED" }));
+		stubFetch(storageResponse(), jsonResponse(202, { requestId: "abc-123", status: "QUEUED" }));
 
 		await newClient().upload(target, "bytes");
 

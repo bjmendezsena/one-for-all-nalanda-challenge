@@ -9,6 +9,7 @@ hs_err_pid*
 node_modules/
 sdk/dist/
 sdk/coverage/
+example/dist/
 *.tsbuildinfo
 npm-debug.log*
 yarn-error.log*

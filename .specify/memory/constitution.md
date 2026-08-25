@@ -1,11 +1,18 @@
 <!--
 Sync Impact Report
 ==================
-Version change: 1.0.0 → 1.1.0
-Rationale: principle IX amended so that every Docker asset lives under `docker/` (and the backend
-  is explicitly not containerized), replacing the previous "one `docker-compose.yml` at the repo
-  root". Requested by the human in feature 001-project-skeleton-docker; `docs/service/architecture.md`
-  § 3, `docs/service/kafka.md` § 5 and `README.md` were updated in the same change.
+Version change: 1.1.0 → 1.2.0
+Rationale: the repository now delivers a third artifact, `example/`, a non-publishable demonstration
+  that consumes the SDK the way an external consumer would. Principles III, IV and VII were amended
+  to say which rules govern it, and the Documentation Index gained its README. The same amendment
+  corrected the `request()` snippet in `docs/sdk/code_rules.md` § 2, which embedded a defect: it
+  parsed every non-`204` success as JSON, so a presigned storage `PUT` (`200` with an empty body)
+  made `upload` throw before `confirm` ran. Requested by the human in feature
+  004-example-sdk-integration; `CLAUDE.md`, `README.md` and `docs/sdk/code_rules.md` were updated in
+  the same change.
+Previous: 1.0.0 → 1.1.0, principle IX amended so that every Docker asset lives under `docker/` (and
+  the backend is explicitly not containerized), replacing the previous "one `docker-compose.yml` at
+  the repo root".
 Previous: none → 1.0.0 (initial ratification), first constitution for this repository, created when
   spec-kit was integrated.
 Principles defined: I Documentation Is the Source of Truth · II Spec-Driven Development ·
@@ -15,7 +22,8 @@ Principles defined: I Documentation Is the Source of Truth · II Spec-Driven Dev
 Added sections: Additional Constraints, Documentation Index, Development Workflow, Governance
 Removed sections: none
 Templates status:
-  - .specify/templates/plan-template.md ✅ aligned (structure section rewritten for service/ + sdk/)
+  - .specify/templates/plan-template.md ✅ aligned (structure section rewritten for service/ + sdk/;
+    example/ is expanded per-feature by /speckit-plan, as 004 did)
   - .specify/templates/spec-template.md ✅ aligned (generic, no changes needed)
   - .specify/templates/tasks-template.md ✅ aligned (tests + path conventions rewritten)
   - .specify/templates/constitution-template.md ✅ aligned (unchanged upstream template)
@@ -24,9 +32,13 @@ Follow-up TODOs: none
 
 # One For All — Nalanda Challenge Constitution
 
-This repository delivers two artifacts from one monorepo: `service/` (Java/Spring Boot
-backend implementing the asynchronous document-validation flow) and `sdk/` (TypeScript
-client library wrapping its HTTP API). This constitution governs **how** the project is
+This repository delivers three artifacts from one monorepo: `service/` (Java/Spring Boot
+backend implementing the asynchronous document-validation flow), `sdk/` (TypeScript
+client library wrapping its HTTP API), and `example/` (a small, non-publishable project that
+consumes `sdk/` exactly as an external consumer would — declared as a dependency in its own
+manifest and imported by package name — and asserts every documented behavior against a running
+backend). `example/` exists to prove the SDK's packaging and published types, which nothing inside
+`sdk/` can prove about itself. This constitution governs **how** the project is
 built; it does **not** duplicate the documentation. Substance lives in `docs/` (the what
 and the how) and in `README.md § Design trade-offs` (the why, with the discarded
 alternatives). If this document and those ever conflict, **they win** and this document
@@ -64,7 +76,10 @@ to make a test pass.
 `docs/service/code_rules.md` (backend) and `docs/sdk/code_rules.md` (SDK) — constitute the
 complete, non-negotiable restriction set for producing code in this repository. Every
 change to `service/` MUST comply with the service code rules, and every change to `sdk/`
-with the SDK code rules, restrictively and without selective application. This explicitly
+with the SDK code rules, restrictively and without selective application. `example/` has no rule
+file of its own: its TypeScript MUST comply with `docs/sdk/code_rules.md`, and it MUST reach the SDK
+only through the package's public entrypoint — never `sdk/src/internal/**`, and never a relative
+path into `sdk/dist`. This explicitly
 includes each file's § "Restrictions for AI coding assistants", which are **hard
 restrictions, not suggestions**. Compliance is a **blocking acceptance criterion**: any
 violation MUST be rejected in review, and no change ships until it complies. Notably and
@@ -96,7 +111,9 @@ integrations — persistence, messaging, and storage — with layer-first packag
 dependency rule `domain ← application ← adapter` MUST hold and the domain layer stays pure
 (no framework types, no annotations). The application layer is one class per use case. The
 SDK mirrors this discipline at its own scale: a small, intentional public surface exported
-only from `src/index.ts`, with internals under `src/internal/` never re-exported. New
+only from `src/index.ts`, with internals under `src/internal/` never re-exported. `example/` is a
+flat consumer with no layers of its own: it depends on `sdk/` and on nothing else in the repository,
+and neither `service/` nor `sdk/` ever depends on it. New
 layers, modules, or packages that the architecture docs do not define MUST NOT be invented.
 References: `docs/service/architecture.md`, `docs/sdk/architecture.md`.
 
@@ -136,8 +153,12 @@ service is covered by the full pyramid — domain and use-case tests against **h
 fakes** (`InMemory…`, `Recording…`, no Mockito at that layer), Mockito reserved for the
 messaging and storage adapters, and integration tests on **H2 in-memory** plus fakes/mocks
 for Kafka/MinIO. **Testcontainers is NOT introduced.** The SDK is tested with Vitest against
-a directly mocked `fetch` — MSW, `nock`, and similar are not introduced. Test names follow
-`should_<expectedBehavior>_when_<condition>()`. Every business rule in
+a directly mocked `fetch` — MSW, `nock`, and similar are not introduced. A stubbed response MUST
+reproduce the shape the real counterpart returns; a stub that is more convenient than the real
+response hides defects rather than covering them. Test names follow
+`should_<expectedBehavior>_when_<condition>()`. `example/` introduces no test framework: it is
+itself an assertion-backed acceptance harness, each scenario declaring its expected outcome and the
+process exiting non-zero when any scenario fails. Every business rule in
 `docs/business-rules.md` (status transitions, verdict rule, idempotency, error reasons) MUST
 have a test that would fail if the rule were broken.
 References: `docs/service/code_rules.md` (§ 7), `docs/sdk/code_rules.md` (§ 6),
@@ -205,6 +226,7 @@ an area, its referenced doc governs.
 | Upload / presigned-URL flow                                   | `docs/service/upload-flow.md`                                  |
 | SDK architecture and public surface                           | `docs/sdk/architecture.md`                                     |
 | **SDK code rules (non-negotiable)**                           | `docs/sdk/code_rules.md`                                       |
+| Example project (SDK integration harness)                     | `example/README.md`                                            |
 | Local infrastructure                                          | `docker/` — `docker-compose.yml`, `.env`, `README.md` (documented in `docs/service/architecture.md` § 3) |
 | Governance                                                    | `.specify/memory/constitution.md` (this file)                  |
 
@@ -217,7 +239,7 @@ Work flows through spec-kit: specify → clarify → plan → tasks → analyze 
 implement, orchestrated end-to-end by the `/feature` command. The Constitution Check gate in
 `plan-template.md` MUST be evaluated against this document before Phase 0 research and
 re-checked after design. Before a change is "done", self-verification is mandatory: build +
-tests green (`service/` and `sdk/` as applicable), the diff re-read, the code rules of the
+tests green (`service/`, `sdk/` and `example/` as applicable), the diff re-read, the code rules of the
 touched artifact re-checked, and the affected docs updated in the same change.
 
 ## Governance
@@ -233,4 +255,4 @@ touched artifact re-checked, and the affected docs updated in the same change.
 - All reviews MUST verify compliance with the principles above; violations require a
   justification entry in the plan's Complexity Tracking table or MUST be rejected.
 
-**Version**: 1.1.0 | **Ratified**: 2026-08-25 | **Last Amended**: 2026-08-25
+**Version**: 1.2.0 | **Ratified**: 2026-08-25 | **Last Amended**: 2026-08-25
