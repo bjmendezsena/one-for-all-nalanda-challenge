@@ -1,6 +1,6 @@
 # one-for-all-nalanda-challenge
 
-Fullstack Engineer Sr — Technical Assessment. Spring Boot service (`service/`) + TypeScript SDK (`sdk/`) implementing the asynchronous document validation flow.
+Fullstack Engineer Sr — Technical Assessment. Spring Boot service (`service/`) + TypeScript SDK (`sdk/`) implementing the asynchronous document validation flow, plus a runnable integration example (`example/`) that consumes the SDK as an external consumer would.
 
 ## Architecture
 
@@ -11,9 +11,13 @@ The system validates business documents asynchronously. A client:
 4. Processing happens asynchronously (extraction is a deterministic stub).
 5. The client polls the validation status, or uses the SDK's `waitForCompletion` helper.
 
-Two artifacts are delivered from one monorepo:
+Three artifacts are delivered from one monorepo:
 - `service/` — the Java/Spring Boot backend implementing the API and the async processing pipeline.
 - `sdk/` — the TypeScript client library that wraps the HTTP API for Node/bundler consumers.
+- `example/` — a small, non-publishable project that installs the SDK from its own manifest and
+  imports it by package name, then asserts every documented behavior against a running backend. It
+  is the only thing in the repository that exercises the SDK's packaging, `exports` map and
+  published type declarations. See § Running the example.
 
 For the detailed backend architecture (hexagonal layers, package structure, ports/adapters, infrastructure), see [`docs/service/architecture.md`](docs/service/architecture.md); for the SDK's architecture, see [`docs/sdk/architecture.md`](docs/sdk/architecture.md). For the reasoning behind each design decision, see § Design trade-offs below.
 
@@ -45,6 +49,10 @@ one-for-all-nalanda-challenge/
 │       └── code_rules.md
 ├── service/                    # Java / Spring Boot backend (Gradle wrapper committed)
 ├── sdk/                        # TypeScript client library
+├── example/                    # integration example: installs the SDK and asserts it end to end
+│   ├── justificante.pdf        # the valid sample document
+│   ├── src/                    # config, documents, runner, scenarios, entrypoint
+│   └── README.md
 ├── specs/                      # spec-kit feature artifacts (spec / plan / tasks per feature)
 └── .specify/                   # spec-kit configuration, templates and the constitution
 ```
@@ -241,6 +249,42 @@ The SDK's surface is `createClient(options)` plus `startValidation`, `upload`, `
 [`sdk/README.md`](sdk/README.md) for install/usage as a consumer would use it, and
 [`docs/sdk/architecture.md`](docs/sdk/architecture.md) § 4 for the surface itself.
 
+## Running the example
+
+`sdk/examples/validate-document.mjs` above is a snippet *inside* the package — it imports
+`../dist/index.js` by relative path. `example/` is the opposite: a separate project that installs
+the SDK from its own manifest (`"@nalanda/validation-sdk": "file:../sdk"`) and imports it by
+package name, so it is the only thing here that exercises the `exports` map, the `files` allowlist
+and the published `.d.ts`.
+
+One-time, to link the SDK into the example:
+
+```bash
+npm run install:example
+```
+
+Then, with the stack up:
+
+```bash
+npm run docker:up      # postgres, kafka, minio
+npm run dev:service    # the backend on http://localhost:8080
+npm run example        # builds the SDK, then runs every scenario
+```
+
+`npm run example` rebuilds `sdk/dist` first, so the example always runs against the current SDK
+rather than a stale build. If the backend is not up, it says so and names the commands that start
+it, instead of failing with a stack trace.
+
+It runs 14 scenarios covering the whole SDK surface and every documented business rule — the four
+verdict outcomes, idempotent create, confirm replay, polling timeout and cancellation, and the
+404/400/401/403 error paths. Each scenario declares its expected outcome, compares it with what
+happened, and the process exits non-zero if any of them failed. `BASE_URL` and `API_KEY` are read
+from the environment, defaulting to `http://localhost:8080` and `local-dev-api-key`.
+
+It is deliberately **not** part of `npm test`: it needs a live backend, while `npm test` must stay
+runnable with nothing else up. See [`example/README.md`](example/README.md) for the scenario table
+and troubleshooting.
+
 ### Root `package.json`
 
 The root `package.json` holds only orchestration scripts (`dev`, `build`, `test`, `docker:up`/`docker:down`) that delegate to `service/` (Gradle) and `sdk/` (npm) — it is not itself a publishable package and has no runtime dependencies of its own, only `concurrently` as a dev dependency to run `docker compose up` + the service + the SDK watch build together under `npm run dev`. See § Design trade-offs → Root package.json and dev orchestration.
@@ -330,6 +374,30 @@ jOOQ (schema-first codegen, closer to a Prisma-like workflow) was considered but
 **Why:**
 - It's what the assignment itself suggests ("Vite (or equivalent) producing dual ESM + CJS + .d.ts"), so no deviation needs to be justified.
 - Prior hands-on experience with Vite and its ecosystem, which reduces configuration risk inside a 24h timebox.
+
+### Example project: a separate top-level consumer rather than another snippet in `sdk/examples/`
+
+**Alternatives considered:** adding another script under `sdk/examples/` next to `validate-document.mjs`; or a separate top-level `example/` project that installs the SDK through its own manifest.
+
+**Chosen:** a separate top-level `example/`, declaring `"@nalanda/validation-sdk": "file:../sdk"` and importing by package name.
+
+**Why:**
+- `sdk/examples/validate-document.mjs` imports `../dist/index.js` by relative path. That resolves a file, not a package: it never touches the `exports` map, the `files: ["dist"]` allowlist, or the published `.d.ts`. Those three are exactly what breaks when a library is published, and nothing in the repository was checking them.
+- An external consumer is also the only place the SDK's ergonomics can be judged honestly — if the published types are wrong or an export is missing, `example/` fails to compile, which is the point.
+- The cost is a third artifact in a repository documented as having two, so the constitution, `CLAUDE.md` and this README were amended in the same change (constitution 1.2.0) rather than letting the docs drift.
+- It paid for itself immediately: the first end-to-end run surfaced a real defect in `sdk/`, where a presigned `PUT` answering `200` with an empty body was handed to `JSON.parse` (fixed in `0.1.1`). The unit tests had missed it because they stubbed storage with a JSON body.
+
+### Example harness: a self-written scenario runner, not a test framework
+
+**Alternatives considered:** a Vitest suite in `example/` pointed at the live service; Node's built-in `node:test`; or a small hand-written runner with no test dependency.
+
+**Chosen:** a hand-written runner (~60 lines) where each scenario declares its expected outcome, the report prints expected-versus-observed, and the process exits non-zero if any scenario failed.
+
+**Why:**
+- `docs/sdk/code_rules.md` § 6 fixes the SDK's test style as Vitest against a *mocked* `fetch`. Putting a Vitest suite that hits a live backend next to it would blur a boundary the code rules draw deliberately.
+- The artifact has two audiences at once — someone reading it as an example, and CI reading its exit code. Test-runner output serves the second well and the first badly; a report naming each scenario, what it covers and what it expected serves both.
+- It keeps `example/` dependency-free at runtime, so what a reader sees is SDK usage rather than framework wiring.
+- The cost is writing the runner and the assertions by hand. At fourteen scenarios that is a small, readable file; at ten times that, a framework would win.
 
 ### Authentication: static API key stub
 

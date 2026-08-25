@@ -3,7 +3,7 @@ import { createClient } from "../src/client";
 import { ValidationApiError } from "../src/errors";
 import { request } from "../src/internal/http";
 
-function stubResponse(response: Partial<Response>): void {
+function stubResponse(response: Partial<Response> | Response): void {
 	vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response));
 }
 
@@ -13,7 +13,7 @@ describe("request", () => {
 	});
 
 	it("should_returnParsedBody_when_responseIsSuccessful", async () => {
-		stubResponse({ ok: true, status: 200, json: async () => ({ requestId: "abc-123" }) });
+		stubResponse(new Response(JSON.stringify({ requestId: "abc-123" }), { status: 200 }));
 
 		await expect(request<{ requestId: string }>("https://api.local/x", {})).resolves.toEqual({
 			requestId: "abc-123",
@@ -21,11 +21,15 @@ describe("request", () => {
 	});
 
 	it("should_returnUndefined_when_responseHasNoContent", async () => {
-		const json = vi.fn();
-		stubResponse({ ok: true, status: 204, json });
+		stubResponse(new Response(null, { status: 204 }));
 
 		await expect(request("https://api.local/x", {})).resolves.toBeUndefined();
-		expect(json).not.toHaveBeenCalled();
+	});
+
+	it("should_returnUndefined_when_responseHasNoBody", async () => {
+		stubResponse(new Response(null, { status: 200 }));
+
+		await expect(request("https://api.local/x", {})).resolves.toBeUndefined();
 	});
 
 	it("should_throwValidationApiErrorWithProblemDetails_when_serverRejectsRequest", async () => {
@@ -142,7 +146,7 @@ describe("ValidationApiError through the public client", () => {
 			"fetch",
 			vi
 				.fn()
-				.mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({}) })
+				.mockResolvedValueOnce(new Response(null, { status: 200 }))
 				.mockResolvedValueOnce({
 					ok: false,
 					status: 409,

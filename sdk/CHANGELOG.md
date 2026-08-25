@@ -3,6 +3,16 @@
 All notable changes to this package are documented here. This project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2026-08-25
+
+### Fixed
+
+- `upload` no longer fails on the presigned `PUT`. A successful response carrying no body is now
+  treated as a body-less success for any status, not only `204` — object storage answers `200` with
+  an empty body, which the client used to hand to `JSON.parse`, raising a `SyntaxError` before the
+  `confirm` call was ever made. The unit tests that covered the upload now stub storage with a real
+  body-less response instead of a JSON one, which is why the defect had gone unnoticed.
+
 ## [0.1.0] - 2026-08-25
 
 ### Added
