@@ -44,12 +44,35 @@ sdk/
 
 ## 4. Public API surface
 
-Names may be refined during implementation, see `README.md` minimum SDK surface:
-- `createClient(options)`
-- `client.startValidation(input)`
-- `client.upload(requestId, data)`
-- `client.getValidation(requestId)`
-- `client.waitForCompletion(requestId, opts?)`
+The surface as shipped in `0.1.0`. Only `src/index.ts` exports it; `src/internal/**` is never
+re-exported.
+
+```typescript
+createClient(options: ClientOptions): ValidationClient
+
+client.startValidation(input: StartValidationInput, callOptions?: StartValidationCallOptions): Promise<StartValidationResponse>
+client.upload(target: UploadTarget, data: UploadData, contentType?: string): Promise<ConfirmUploadResponse>
+client.getValidation(requestId: string): Promise<ValidationRequestDto>
+client.waitForCompletion(requestId: string, options?: WaitForCompletionOptions): Promise<ValidationRequestDto>
+```
+
+| Operation | HTTP calls |
+|---|---|
+| `startValidation` | `POST /api/v1/validations`, with `Idempotency-Key` when the caller supplies one |
+| `upload` | `PUT target.uploadUrl` (direct to object storage, no `X-Api-Key`), then `POST /api/v1/validations/{requestId}/confirm` |
+| `getValidation` | `GET /api/v1/validations/{requestId}` |
+| `waitForCompletion` | repeated `getValidation` until `COMPLETED` or `FAILED` |
+
+There is no separate `confirm` operation: `upload` is the only point at which the client knows the
+bytes were sent, so it performs the confirm itself, and it skips the confirm if the `PUT` was
+rejected. `target` is the object `startValidation` returned — the client keeps no state and the
+read endpoint does not return `uploadUrl`.
+
+Alongside the factory, `src/index.ts` exports `ValidationApiError` and the public types
+(`ClientOptions`, `ValidationClient`, `ValidationStatus`, `Verdict`, `ValidationResult`,
+`ValidationRequestDto`, `StartValidationInput`, `StartValidationCallOptions`,
+`StartValidationResponse`, `ConfirmUploadResponse`, `UploadTarget`, `UploadData`,
+`WaitForCompletionOptions`, `ProblemDetailsBody`). Usage examples live in `sdk/README.md`.
 
 ## 5. Boundary with the backend
 

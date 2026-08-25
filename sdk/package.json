@@ -20,6 +20,7 @@
     "build": "vite build && tsc --project tsconfig.build.json",
     "dev": "vite build --watch",
     "test": "vitest run --passWithNoTests",
+    "example": "npm run build && node examples/validate-document.mjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {},
