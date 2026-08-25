@@ -1,6 +1,6 @@
 # Code rules
 
-Status: living document. This file lives under `docs/service/` — it is specific to the backend (`service/`). The SDK has its own equivalent, `docs/sdk/code_rules.md`. This file describes the implementation-level conventions for `service/` — how each layer is actually written, with examples. It assumes familiarity with `docs/service/architecture.md` (the hexagonal layers and package structure) and `docs/business-rules.md` (the domain rules being implemented, shared with the SDK). It does not repeat the reasoning behind each choice — the rationale and discarded alternatives live in `README.md § Design trade-offs`, indexed by the same section names used here.
+Status: living document. This file lives under `docs/service/` — it is specific to the backend (`service/`). The SDK has its own equivalent, `docs/sdk/code_rules.md`. This file describes the implementation-level conventions for `service/` — how each layer is actually written, with examples. It assumes familiarity with `docs/service/architecture.md` (the hexagonal layers and package structure) and `docs/business-rules.md` (the domain rules being implemented, shared with the SDK). It does not repeat the reasoning behind each choice — the rationale and discarded alternatives live in `docs/design-trade-offs.md`, indexed by the same section names used here.
 
 `<base-package>` below stands for the project's base package (suggested: `com.nalanda.validation`, see `docs/service/architecture.md` § 4.2).
 
@@ -279,7 +279,7 @@ Every new domain exception gets exactly one `@ExceptionHandler` here mapping it 
 
 ## 6. Controllers
 
-**Explicitly accepted exception to the domain-purity rule** (see `README.md § Design trade-offs → Controllers`): `domain/model` classes are annotated directly with Jackson and `jakarta.validation` and returned/accepted as-is by controllers — there are no separate request/response DTOs in this codebase.
+**Explicitly accepted exception to the domain-purity rule** (see `docs/design-trade-offs.md § Controllers`): `domain/model` classes are annotated directly with Jackson and `jakarta.validation` and returned/accepted as-is by controllers — there are no separate request/response DTOs in this codebase.
 
 ```java
 // domain/model/ValidationRequest.java (excerpt, annotated for the web boundary — see accepted trade-off above)
@@ -390,7 +390,7 @@ This is on top of the input-validation and error-body requirements the assignmen
 
 ## 9. Restrictions for AI coding assistants
 
-This section exists so that any AI coding assistant working on `service/` — regardless of which one — stays inside the decisions already made in this document and in `README.md § Design trade-offs`, instead of silently substituting a "more idiomatic" alternative. These are hard restrictions, not suggestions:
+This section exists so that any AI coding assistant working on `service/` — regardless of which one — stays inside the decisions already made in this document and in `docs/design-trade-offs.md`, instead of silently substituting a "more idiomatic" alternative. These are hard restrictions, not suggestions:
 
 **Architecture and domain**
 - `domain/model` and `domain/port` never import Spring, JPA, Kafka, or the AWS SDK. Zero framework annotations in `domain/`.
@@ -400,15 +400,15 @@ This section exists so that any AI coding assistant working on `service/` — re
 - Controllers may expose `domain/model` directly (the one accepted, documented exception — § 6), but never a type from `adapter/out/*` or a raw JPA entity.
 - Every error path produces a `ProblemDetail` via the central `@RestControllerAdvice` (§ 5) — never a raw stack trace, and never a second, ad-hoc error shape invented per controller.
 - Kafka, JPA, and S3 calls never happen directly from `application` or `domain` — only through the ports (`JobPublisher`, `JobConsumer`, `DocumentStoragePort`, `ValidationRequestRepository`) (§ 2, § 3).
-- `ConfirmUploadUseCase` never calls `DocumentStoragePort` — confirm does no storage I/O, by design (see `README.md § Design trade-offs → Document upload flow` and `docs/service/upload-flow.md`).
+- `ConfirmUploadUseCase` never calls `DocumentStoragePort` — confirm does no storage I/O, by design (see `docs/design-trade-offs.md § Document upload flow` and `docs/service/upload-flow.md`).
 
 **Testing**
 - `application`-layer tests use hand-written fakes (`InMemory...`, `Recording...`) — Mockito is not used there; Mockito is reserved for `adapter/out/messaging` and `adapter/out/storage` tests only (§ 7).
-- Testcontainers is not introduced — the agreed strategy is H2 + hand-written fakes/mocks (see `README.md § Design trade-offs → Integration testing strategy`).
+- Testcontainers is not introduced — the agreed strategy is H2 + hand-written fakes/mocks (see `docs/design-trade-offs.md § Integration testing strategy`).
 - Test method names always follow `should_<expectedBehavior>_when_<condition>()` — never `test1()`, `testCreate()`, or similar (§ 7, § 8).
 
 **Cross-cutting**
 - Any new dependency, library, or piece of infrastructure is flagged as a question to the human before being added — never introduced silently because it's "commonly used" or "more idiomatic".
-- Any deviation from a decision already documented in `README.md § Design trade-offs` or in this file is raised as an explicit question — never silently substituted.
+- Any deviation from a decision already documented in `docs/design-trade-offs.md` or in this file is raised as an explicit question — never silently substituted.
 - All documentation stays in English.
 - Existing entries in `docs/**/*.md` are not rewritten to "clean them up" — only additive edits or changes explicitly requested by the human are made.

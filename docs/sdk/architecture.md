@@ -1,6 +1,6 @@
 # Architecture (SDK)
 
-Status: living document. This file lives under `docs/sdk/` — it is specific to the TypeScript SDK (`sdk/`). The backend has its own equivalent, `docs/service/architecture.md`. This file describes the current state of the SDK's architecture and structure (the "what" and "how"). It does not repeat the reasoning behind each choice — the rationale, discarded alternatives, and trade-offs for every decision referenced here live in `README.md § Design trade-offs`, indexed by the same names used in this document.
+Status: living document. This file lives under `docs/sdk/` — it is specific to the TypeScript SDK (`sdk/`). The backend has its own equivalent, `docs/service/architecture.md`. This file describes the current state of the SDK's architecture and structure (the "what" and "how"). It does not repeat the reasoning behind each choice — the rationale, discarded alternatives, and trade-offs for every decision referenced here live in `docs/design-trade-offs.md`, indexed by the same names used in this document.
 
 ## 1. Purpose of this document
 
@@ -12,16 +12,19 @@ It intentionally does NOT cover (see "Related documents" below for where each to
 - the backend's architecture → `docs/service/architecture.md`
 - business rules and validation logic (shared between service and SDK) → `docs/business-rules.md`
 - implementation-level coding conventions for the SDK, with examples → `docs/sdk/code_rules.md`
-- why a decision was made over its alternatives → `README.md § Design trade-offs`
+- how to build/test the SDK → `docs/sdk/building-and-testing.md`
+- why a decision was made over its alternatives → `docs/design-trade-offs.md`
 
 ## 2. Related documents
 
 | Document | Content |
 |---|---|
-| `README.md` | Project overview, how to run, § Design trade-offs (decision + alternatives + rationale) |
+| `README.md` | Project overview, repository layout, quick start |
+| `docs/design-trade-offs.md` | Every design decision: alternatives considered, chosen approach, rationale |
 | `docs/business-rules.md` | Domain/business rules — shared between `service/` and `sdk/` |
 | `docs/service/architecture.md` | Backend architecture and structure |
 | `docs/sdk/architecture.md` | This file — SDK architecture and structure |
+| `docs/sdk/building-and-testing.md` | How to build, test, typecheck the SDK, and run its examples |
 | `docs/sdk/code_rules.md` | SDK implementation-level coding conventions |
 
 ## 3. SDK structure (`sdk/`)
@@ -80,7 +83,7 @@ The SDK only depends on the HTTP API contract exposed by `service/` (see `docs/b
 
 ## 6. Cross-cutting architectural decisions (index)
 
-The table below is an index into `README.md § Design trade-offs`, where the discarded alternatives and the reasoning for each decision are recorded. This document only states the current, chosen state. Backend-specific decisions are indexed in `docs/service/architecture.md` instead.
+The table below is an index into `docs/design-trade-offs.md`, where the discarded alternatives and the reasoning for each decision are recorded. This document only states the current, chosen state. Backend-specific decisions are indexed in `docs/service/architecture.md` instead.
 
 | Concern | Chosen approach |
 |---|---|

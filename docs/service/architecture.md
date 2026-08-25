@@ -1,6 +1,6 @@
 # Architecture (service)
 
-Status: living document. This file lives under `docs/service/` — it is specific to the backend (`service/`). The SDK has its own equivalent, `docs/sdk/architecture.md`. This file describes the current state of the service's architecture and structure (the "what" and "how"). It does not repeat the reasoning behind each choice — the rationale, discarded alternatives, and trade-offs for every decision referenced here live in `README.md § Design trade-offs`, indexed by the same names used in this document.
+Status: living document. This file lives under `docs/service/` — it is specific to the backend (`service/`). The SDK has its own equivalent, `docs/sdk/architecture.md`. This file describes the current state of the service's architecture and structure (the "what" and "how"). It does not repeat the reasoning behind each choice — the rationale, discarded alternatives, and trade-offs for every decision referenced here live in `docs/design-trade-offs.md`, indexed by the same names used in this document.
 
 ## 1. Purpose of this document
 
@@ -17,15 +17,19 @@ It intentionally does NOT cover (see "Related documents" below for where each to
 - implementation-level coding conventions (how classes are actually written, with examples) → `docs/service/code_rules.md`
 - the event catalog and Kafka topic/message design → `docs/service/events.md` and `docs/service/kafka.md`
 - the exact upload/presigned-URL sequence → `docs/service/upload-flow.md`
-- why a decision was made over its alternatives → `README.md § Design trade-offs`
+- how to run the service locally and the practical HTTP API reference → `docs/service/running-locally.md` and `docs/service/api.md`
+- why a decision was made over its alternatives → `docs/design-trade-offs.md`
 
 ## 2. Related documents
 
 | Document | Content |
 |---|---|
-| `README.md` | Project overview, how to run, § Design trade-offs (decision + alternatives + rationale) |
+| `README.md` | Project overview, repository layout, quick start |
+| `docs/design-trade-offs.md` | Every design decision: alternatives considered, chosen approach, rationale |
 | `docs/business-rules.md` | Domain/business rules — shared between `service/` and `sdk/` |
 | `docs/service/architecture.md` | This file — backend architecture and structure |
+| `docs/service/running-locally.md` | Starting the local infrastructure and the service, verifying the wiring |
+| `docs/service/api.md` | HTTP API reference: endpoints, auth, errors, idempotency, curl walkthrough |
 | `docs/service/code_rules.md` | Backend implementation-level coding conventions per layer, with examples |
 | `docs/service/events.md` | Event catalog: names, payloads, producers, consumers |
 | `docs/service/kafka.md` | Kafka-specific implementation: topics, partitioning, consumer groups, serialization |
@@ -72,7 +76,7 @@ Ports, credentials, the database name and the bucket name come from `docker/.env
 
 Because each service's state lives in a named volume, `docker compose down` followed by `docker compose up -d` preserves the data; only `down -v` resets it.
 
-See `README.md § Design trade-offs` for why each of these was chosen as a real dependency instead of a lighter-weight substitute.
+See `docs/design-trade-offs.md` for why each of these was chosen as a real dependency instead of a lighter-weight substitute.
 
 ## 4. Backend architecture (`service/`)
 
@@ -92,7 +96,7 @@ adapter (in/web, out/persistence, out/messaging, out/storage)
      domain
 ```
 
-- `domain` has no dependency on Spring, JPA, Kafka, or the AWS SDK. It defines the model and the ports (interfaces) it needs from the outside world. (One explicit, documented exception: see `README.md § Design trade-offs → Controllers`.)
+- `domain` has no dependency on Spring, JPA, Kafka, or the AWS SDK. It defines the model and the ports (interfaces) it needs from the outside world. (One explicit, documented exception: see `docs/design-trade-offs.md § Controllers`.)
 - `application` orchestrates domain objects and ports to implement use cases. It depends on `domain` only.
 - `adapter` implements the inbound entrypoint (`in/web`, REST controllers) and the outbound ports (`out/persistence`, `out/messaging`, `out/storage`) using concrete frameworks/libraries. Adapters depend on `application` and `domain`, never the other way around.
 - `config` wires adapters to ports (Spring `@Bean` / `@Configuration` classes) and holds cross-cutting Spring configuration (security filter, Kafka config, S3 client config).
@@ -168,7 +172,7 @@ The exact endpoints, request/response shapes, and status machine are defined in 
 
 ## 5. Cross-cutting architectural decisions (index)
 
-The table below is an index into `README.md § Design trade-offs`, where the discarded alternatives and the reasoning for each decision are recorded. This document only states the current, chosen state. SDK-specific decisions (e.g. the SDK bundler) are indexed in `docs/sdk/architecture.md` instead.
+The table below is an index into `docs/design-trade-offs.md`, where the discarded alternatives and the reasoning for each decision are recorded. This document only states the current, chosen state. SDK-specific decisions (e.g. the SDK bundler) are indexed in `docs/sdk/architecture.md` instead.
 
 | Concern | Chosen approach |
 |---|---|

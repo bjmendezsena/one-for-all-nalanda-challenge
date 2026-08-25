@@ -1,6 +1,6 @@
 # Code rules (SDK)
 
-Status: living document. This file lives under `docs/sdk/` — it is specific to the TypeScript SDK (`sdk/`). The backend has its own equivalent, `docs/service/code_rules.md`. It describes implementation-level conventions for the SDK, with examples. It assumes familiarity with `docs/sdk/architecture.md` (structure, public API surface) and `docs/business-rules.md` (the domain rules the SDK's types and errors reflect). It does not repeat the reasoning behind each choice — the rationale and discarded alternatives live in `README.md § Design trade-offs`, indexed by the same section names used here.
+Status: living document. This file lives under `docs/sdk/` — it is specific to the TypeScript SDK (`sdk/`). The backend has its own equivalent, `docs/service/code_rules.md`. It describes implementation-level conventions for the SDK, with examples. It assumes familiarity with `docs/sdk/architecture.md` (structure, public API surface) and `docs/business-rules.md` (the domain rules the SDK's types and errors reflect). It does not repeat the reasoning behind each choice — the rationale and discarded alternatives live in `docs/design-trade-offs.md`, indexed by the same section names used here.
 
 ## 1. Client: factory function, not a class
 
@@ -81,7 +81,7 @@ This mirrors, on the client side, exactly the shape produced by the backend's `@
 
 ## 4. Types: mirror the backend's actual response shape
 
-Because the backend exposes `domain/model` directly (see `README.md § Design trade-offs → Controllers`), the SDK's types are written to match that JSON as it actually is on the wire, not an idealized/independent contract.
+Because the backend exposes `domain/model` directly (see `docs/design-trade-offs.md § Controllers`), the SDK's types are written to match that JSON as it actually is on the wire, not an idealized/independent contract.
 
 ```typescript
 // src/types.ts
@@ -257,12 +257,12 @@ Only `src/index.ts` exports the public API; internal helpers (e.g. `src/internal
 
 ## 9. Restrictions for AI coding assistants
 
-This section exists so that any AI coding assistant working on `sdk/` — regardless of which one — stays inside the decisions already made in this document and in `README.md § Design trade-offs`, instead of silently substituting a "more idiomatic" alternative. These are hard restrictions, not suggestions:
+This section exists so that any AI coding assistant working on `sdk/` — regardless of which one — stays inside the decisions already made in this document and in `docs/design-trade-offs.md`, instead of silently substituting a "more idiomatic" alternative. These are hard restrictions, not suggestions:
 
 **SDK design**
 - `src/` is pure ESM (`import`/`export`) — never `require`/`module.exports` by hand; the dual ESM/CJS output is Vite's responsibility exclusively (§ 7).
 - No HTTP client dependency (`axios`, `node-fetch`, etc.) is added — only the native `fetch` API (§ 2).
-- The client stays a factory function (`createClient` returning a plain object of closures) — it is never turned into a `class`/`new Client()` (§ 1; the classes-vs-closures alternative was already discussed and rejected, see `README.md § Design trade-offs → SDK client architecture`).
+- The client stays a factory function (`createClient` returning a plain object of closures) — it is never turned into a `class`/`new Client()` (§ 1; the classes-vs-closures alternative was already discussed and rejected, see `docs/design-trade-offs.md § SDK client architecture`).
 - Every API error is thrown as `ValidationApiError` carrying the HTTP status and Problem Details body — never a raw `fetch` rejection or a generic `Error` (§ 3).
 - `waitForCompletion` keeps exponential backoff and `AbortSignal` support — no fixed-interval polling, and no external retry library (`p-retry` or similar) is added (§ 5).
 - `tsconfig.json` keeps `"strict": true` at all times — never relaxed to silence a type error.
@@ -273,6 +273,6 @@ This section exists so that any AI coding assistant working on `sdk/` — regard
 
 **Cross-cutting**
 - Any new dependency, library, or piece of infrastructure is flagged as a question to the human before being added — never introduced silently because it's "commonly used" or "more idiomatic".
-- Any deviation from a decision already documented in `README.md § Design trade-offs` or in this file is raised as an explicit question — never silently substituted.
+- Any deviation from a decision already documented in `docs/design-trade-offs.md` or in this file is raised as an explicit question — never silently substituted.
 - All documentation stays in English.
 - Existing entries in `docs/**/*.md` are not rewritten to "clean them up" — only additive edits or changes explicitly requested by the human are made.

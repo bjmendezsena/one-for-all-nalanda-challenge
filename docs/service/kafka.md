@@ -1,6 +1,6 @@
 # Kafka (service)
 
-Status: living document. This file lives under `docs/service/`. It describes the concrete Kafka configuration — topic, consumer group, serialization, partitioning. For what the event means and who produces/consumes it, see `docs/service/events.md`. For why this design was chosen over alternatives, see `README.md § Design trade-offs → Event/messaging design`.
+Status: living document. This file lives under `docs/service/`. It describes the concrete Kafka configuration — topic, consumer group, serialization, partitioning. For what the event means and who produces/consumes it, see `docs/service/events.md`. For why this design was chosen over alternatives, see `docs/design-trade-offs.md § Event/messaging design`.
 
 ## 1. Topic
 
@@ -16,7 +16,7 @@ Single consumer group: `validation-service`. All instances of the service share 
 
 ## 3. Serialization
 
-Plain JSON via Spring Kafka's `JsonSerializer` (producer) / `JsonDeserializer` (consumer) — configured in `config/KafkaConfig.java`. No Avro, no Schema Registry: the payload is a single flat field (`validationRequestId`), and adding schema-registry infrastructure for that would be disproportionate for this slice (see `README.md § Design trade-offs`). If the event payload grows in a future iteration, moving to Avro + Schema Registry is a config/dependency change, not a redesign, since serialization is isolated to the adapter layer (`adapter/out/messaging`) and never leaks into `domain`/`application`.
+Plain JSON via Spring Kafka's `JsonSerializer` (producer) / `JsonDeserializer` (consumer) — configured in `config/KafkaConfig.java`. No Avro, no Schema Registry: the payload is a single flat field (`validationRequestId`), and adding schema-registry infrastructure for that would be disproportionate for this slice (see `docs/design-trade-offs.md`). If the event payload grows in a future iteration, moving to Avro + Schema Registry is a config/dependency change, not a redesign, since serialization is isolated to the adapter layer (`adapter/out/messaging`) and never leaks into `domain`/`application`.
 
 ```yaml
 # application.yml (excerpt)

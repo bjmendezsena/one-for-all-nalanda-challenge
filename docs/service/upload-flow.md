@@ -1,6 +1,6 @@
 # Upload flow (service)
 
-Status: living document. This file lives under `docs/service/`. It describes the exact, step-by-step sequence of creating a validation, uploading a document, and confirming it — request/response shapes and edge cases. It does not repeat why presigned URLs + MinIO were chosen (see `README.md § Design trade-offs → Document upload flow`), the business rules being applied (see `docs/business-rules.md`), or the event published as part of this flow (see `docs/service/events.md`).
+Status: living document. This file lives under `docs/service/`. It describes the exact, step-by-step sequence of creating a validation, uploading a document, and confirming it — request/response shapes and edge cases. It does not repeat why presigned URLs + MinIO were chosen (see `docs/design-trade-offs.md § Document upload flow`), the business rules being applied (see `docs/business-rules.md`), or the event published as part of this flow (see `docs/service/events.md`).
 
 ## 1. Sequence
 
@@ -107,7 +107,7 @@ After completion:
 
 ## 3. Why `confirm` doesn't check the upload
 
-`confirm` stays a pure, fast state transition with no storage I/O — see `README.md § Design trade-offs → Upload flow` for the full reasoning. The file size (the one piece of information storage can tell us) is only needed by the processing step, so it's fetched there, once, rather than in `confirm` as well.
+`confirm` stays a pure, fast state transition with no storage I/O — see `docs/design-trade-offs.md § Upload flow` for the full reasoning. The file size (the one piece of information storage can tell us) is only needed by the processing step, so it's fetched there, once, rather than in `confirm` as well.
 
 ## 4. Edge cases
 

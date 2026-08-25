@@ -1,6 +1,6 @@
 # Events (service)
 
-Status: living document. This file lives under `docs/service/`. It is the event catalog: what events exist, their payload shape, who produces them, and who consumes them. Kafka-specific configuration (topic name, consumer group, serialization, partitioning, duplicate handling) lives in `docs/service/kafka.md`, not here. The reasoning behind the design (single event vs two, thin vs fat payload) lives in `README.md § Design trade-offs → Event/messaging design`.
+Status: living document. This file lives under `docs/service/`. It is the event catalog: what events exist, their payload shape, who produces them, and who consumes them. Kafka-specific configuration (topic name, consumer group, serialization, partitioning, duplicate handling) lives in `docs/service/kafka.md`, not here. The reasoning behind the design (single event vs two, thin vs fat payload) lives in `docs/design-trade-offs.md § Event/messaging design`.
 
 ## 1. Event catalog
 

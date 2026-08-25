@@ -124,7 +124,7 @@ example/
 ```
 
 There is no test framework: the runner is ~100 lines and the report is written for a reader, not for
-a CI parser. See `README.md § Design trade-offs → Example harness` for why.
+a CI parser. See `docs/design-trade-offs.md § Example harness` for why.
 
 `example/` follows [`docs/sdk/code_rules.md`](../docs/sdk/code_rules.md), and reaches the SDK only
 through its public entrypoint — never `sdk/src/internal/**`, never a relative path into `sdk/dist`.
